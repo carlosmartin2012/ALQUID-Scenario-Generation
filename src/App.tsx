@@ -67,9 +67,10 @@ function App() {
       setSelectedScenarioId(id);
       setIsCreateModalOpen(false);
       resetForm();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to create scenario:", err);
-      alert("Failed to create scenario. Please check if the server is running.");
+      const details = err.message || "Unknown error";
+      alert(`Failed to create scenario.\n\nDetails: ${details}\n\nPlease check the console for more information.`);
     }
   };
 

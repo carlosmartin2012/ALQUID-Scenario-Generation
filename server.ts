@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as XLSX from 'xlsx';
 import path from 'path';
 import fs from 'fs';
+import cors from 'cors';
 
 // Initialize Database
 const db = new Database('scenarios.db');
@@ -101,6 +102,7 @@ async function startServer() {
   const app = express();
   const PORT = 3001;
 
+  app.use(cors());
   app.use(express.json());
 
   // --- Health check ---
