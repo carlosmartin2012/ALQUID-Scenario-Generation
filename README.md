@@ -4,6 +4,10 @@
 
 # Run and deploy your AI Studio app
 
+## Copilot Context
+This project includes a `copilot_context` directory containing the ALQUID User Manual and dummy data templates. These files provide essential background logic and data structure context for AI coding assistants. See [README_CONTEXT.md](file:///C:/Users/carlos.martin/Desktop/Prueba/Scenario%20Generator/copilot_context/README_CONTEXT.md) for details.
+
+## Development
 This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/21d6588d-d1d3-4cef-b4c6-bed6393f3ba6

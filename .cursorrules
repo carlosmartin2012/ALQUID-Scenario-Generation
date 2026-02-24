@@ -1,0 +1,9 @@
+# Scenario Generator AI Context Rules
+
+Always consider the following context when assisting with the development of the Scenario Generator:
+
+1.  **Business Logic**: Refer to `copilot_context/ALQUID_user_manual_vigente.pdf` for the functional definition of ALQUID.
+2.  **Data Formats**: Refer to `copilot_context/dummy_templates/` (and the summary in `copilot_context/README_CONTEXT.md`) for input/output data structures, especially Excel and CSV columns.
+3.  **Project Domain**: This project is focused on financial scenario generation (ALM, Liquidity, Market Risk).
+
+If a requested change involves adding new data fields or changing calculation logic, verify it against the ALQUID manual in the context folder.
