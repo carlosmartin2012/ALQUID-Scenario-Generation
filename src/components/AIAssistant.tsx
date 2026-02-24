@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { Sparkles, X, Loader2, Check } from 'lucide-react';
+import { Sparkles, X, Loader2, Check, Paperclip } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScenarioParameters, BlockType } from '../types';
 import { cn } from '../lib/utils';
@@ -18,6 +18,8 @@ export function AIAssistant({ isOpen, onClose, onApply, activeBlock, embedded = 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedParams, setGeneratedParams] = useState<Partial<ScenarioParameters> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const attachInputRef = useRef<HTMLInputElement>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -83,8 +85,8 @@ export function AIAssistant({ isOpen, onClose, onApply, activeBlock, embedded = 
       `;
 
       const userContent = activeBlock
-        ? `User is currently editing the "${activeBlock}" block.\nUser description: "${prompt}"\n\nGenerate the full ScenarioParameters JSON.`
-        : `User description: "${prompt}"\n\nGenerate the full ScenarioParameters JSON.`;
+        ? `User is currently editing the "${activeBlock}" block.\nAttached file: ${attachedFile ? attachedFile.name : 'none'}.\nUser description: "${prompt}"\n\nGenerate the full ScenarioParameters JSON.`
+        : `Attached file: ${attachedFile ? attachedFile.name : 'none'}.\nUser description: "${prompt}"\n\nGenerate the full ScenarioParameters JSON.`;
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -155,6 +157,39 @@ export function AIAssistant({ isOpen, onClose, onApply, activeBlock, embedded = 
                 className="w-full h-32 px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none text-slate-700 placeholder:text-slate-400"
                 autoFocus
               />
+              {/* File attachment area */}
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={attachInputRef}
+                  className="hidden"
+                  accept=".pdf,.xlsx,.xls,.csv,.json,.txt"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) setAttachedFile(e.target.files[0]);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => attachInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  Attach File
+                </button>
+                {attachedFile && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-medium">
+                    <Paperclip className="w-3 h-3" />
+                    <span className="truncate max-w-[160px]">{attachedFile.name}</span>
+                    <button
+                      onClick={() => setAttachedFile(null)}
+                      className="ml-1 hover:text-indigo-900"
+                      aria-label="Remove attachment"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {error && (

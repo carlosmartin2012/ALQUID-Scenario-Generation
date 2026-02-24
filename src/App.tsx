@@ -13,7 +13,11 @@ import {
   ShieldAlert,
   Settings,
   FileSpreadsheet,
-  Activity
+  Activity,
+  BookOpen,
+  X as XIcon,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScenarioBuilder } from './components/ScenarioBuilder';
@@ -28,6 +32,8 @@ function App() {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isNewDateModalOpen, setIsNewDateModalOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
+  const [manualSection, setManualSection] = useState<number | null>(null);
 
   // Create Scenario State
   const [newScenarioName, setNewScenarioName] = useState('');
@@ -261,6 +267,17 @@ function App() {
               ))
           )}
         </nav>
+
+        {/* User Manual - bottom of sidebar */}
+        <div className="p-4 border-t border-slate-100 flex-shrink-0">
+          <button
+            onClick={() => { setIsManualOpen(true); setManualSection(null); }}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+          >
+            <BookOpen className="w-4 h-4" />
+            User Manual
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -721,6 +738,101 @@ function App() {
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
                 >
                   Create Date
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* User Manual Modal */}
+      <AnimatePresence>
+        {isManualOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 flex items-center justify-between text-white flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">User Manual</h2>
+                    <p className="text-indigo-100 text-xs">ALQUID – Scenario Generator Guide</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsManualOpen(false)}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  aria-label="Close manual"
+                >
+                  <XIcon className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Accordion Content */}
+              <div className="overflow-y-auto flex-1 p-6 space-y-3 text-sm text-slate-700">
+                {[
+                  {
+                    title: '1. Overview',
+                    body: 'ALQUID – Scenario Generator is a platform for ALM teams to create, manage, and validate economic and financial scenarios, capturing macroeconomic assumptions, interest rate curves, inflation configurations, and client-behavior models.'
+                  },
+                  {
+                    title: '2. Dashboard',
+                    body: 'The Dashboard shows summary statistics (Total Scenarios, Validated, Drafts). Below the stats, scenarios are grouped by reporting date. Click any row to open the editor.'
+                  },
+                  {
+                    title: '3. Creating a Reporting Date',
+                    body: 'Click "+ New Date" in the sidebar. A modal lets you pick a new reporting date and optionally copy all scenarios from a previous date to start with an existing baseline.'
+                  },
+                  {
+                    title: '4. Creating a Scenario',
+                    body: 'Click "New Scenario" and fill in: Name, Description, Base Date, Risk Types (IRRBB, CSRBB, Liquidity, FX, Macroeconomic), and Import Data Source (upload a file or connect to ALQUID to import closing data).'
+                  },
+                  {
+                    title: '5. Scenario Editor (Blocks)',
+                    body: 'Parameters are organized in blocks: Macro (GDP, unemployment, CPI), Interest Rates (curve type and bp shocks), Inflation (nominal/real configs), Behavior (NMD and prepayment models), and CSRBB / Liquidity / FX. Click each block in the left panel to edit. Changes are saved automatically.'
+                  },
+                  {
+                    title: '6. ALQUID Copilot (AI Assistant)',
+                    body: 'Describe your scenario in natural language (e.g., "Severe recession, 200bp rate hike"). The AI generates a full parameter set for review. Click "Apply Parameters" to populate the scenario automatically. Use the "Attach File" button to upload supporting documents for the AI to reference.'
+                  },
+                  {
+                    title: '7. Generating Output',
+                    body: 'From the scenario editor, click "Generate Excel" to download scenario data as a formatted spreadsheet template, ready for use in ALM modeling tools.'
+                  }
+                ].map((section, i) => (
+                  <div key={i} className="border border-slate-200 rounded-xl overflow-hidden">
+                    <button
+                      className="w-full flex items-center justify-between px-4 py-3 text-left font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+                      onClick={() => setManualSection(manualSection === i ? null : i)}
+                    >
+                      <span>{section.title}</span>
+                      {manualSection === i
+                        ? <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                    </button>
+                    {manualSection === i && (
+                      <div className="px-4 pb-4 pt-1 text-slate-600 leading-relaxed">
+                        {section.body}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end flex-shrink-0">
+                <button
+                  onClick={() => setIsManualOpen(false)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm"
+                >
+                  Close
                 </button>
               </div>
             </motion.div>
