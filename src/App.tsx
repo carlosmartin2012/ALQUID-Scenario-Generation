@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScenarioBuilder } from './components/ScenarioBuilder';
-import { ScenarioNotebook } from './components/ScenarioNotebook';
+import { ScenarioNotebook, BuiltScenario } from './components/ScenarioNotebook';
 import { useScenarios } from './hooks/useScenarios';
 import { cn } from './lib/utils';
 import { RiskType, Scenario } from './types';
@@ -44,6 +44,11 @@ function App() {
   const [newScenarioDesc, setNewScenarioDesc] = useState('');
   const [newScenarioDate, setNewScenarioDate] = useState(new Date().toISOString().split('T')[0]);
   const [newScenarioRiskTypes, setNewScenarioRiskTypes] = useState<RiskType[]>(['IRRBB']);
+
+  // Import from Builder State
+  const [builtScenario, setBuiltScenario] = useState<BuiltScenario | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importScenarioName, setImportScenarioName] = useState('');
 
   // New Date / Copy State
   const [newDateValue, setNewDateValue] = useState(new Date().toISOString().split('T')[0]);
@@ -137,6 +142,30 @@ function App() {
     }
   };
 
+  const handleImportFromBuilder = async () => {
+    if (!builtScenario || !importScenarioName) return;
+
+    try {
+      // Create the scenario in the dashboard
+      const id = await createScenario(
+        importScenarioName,
+        `Imported from Builder (${builtScenario.scenarioTypeLabel})`,
+        builtScenario.base_date,
+        [builtScenario.scenarioTypeId as RiskType]
+      );
+
+      // Optionally could save the notebook code/params somewhere too
+      console.log("Scenario created with notebook definition:", builtScenario);
+
+      setIsImportModalOpen(false);
+      setImportScenarioName('');
+      alert("Scenario imported successfully!");
+    } catch (err: any) {
+      console.error("Failed to import scenario:", err);
+      alert("Error importing scenario: " + err.message);
+    }
+  };
+
   const handleDelete = async (e: MouseEvent, id: string) => {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this scenario?')) {
@@ -225,7 +254,15 @@ function App() {
               New Scenario
             </button>
             <button
-              onClick={() => { setActiveView('notebook'); setSelectedScenarioId(null); }}
+              onClick={() => {
+                if (builtScenario) {
+                  setImportScenarioName(builtScenario.name);
+                  setIsImportModalOpen(true);
+                } else {
+                  setActiveView('notebook');
+                  alert("Primero debe formular y ejecutar (Run All) un escenario en el Builder.");
+                }
+              }}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-indigo-600 border border-indigo-200 hover:border-indigo-300 rounded-lg text-sm font-medium transition-all shadow-sm"
             >
               <Code2 className="w-4 h-4" />
@@ -315,7 +352,7 @@ function App() {
         {selectedScenarioId ? (
           <ScenarioBuilder scenarioId={selectedScenarioId} onBack={() => setSelectedScenarioId(null)} />
         ) : activeView === 'notebook' ? (
-          <ScenarioNotebook />
+          <ScenarioNotebook onScenarioBuilt={(s) => setBuiltScenario(s)} />
         ) : (
           <div className="flex-1 p-8 overflow-y-auto">
             <header className="mb-8 flex justify-between items-center">
@@ -865,6 +902,79 @@ function App() {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm"
                 >
                   Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Import from Builder Modal */}
+      <AnimatePresence>
+        {isImportModalOpen && builtScenario && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <Code2 className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Import Scenario</h3>
+                </div>
+                <button onClick={() => setIsImportModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <XIcon className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Scenario Name</label>
+                  <input
+                    type="text"
+                    value={importScenarioName}
+                    onChange={(e) => setImportScenarioName(e.target.value)}
+                    placeholder="Enter scenario name..."
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900 bg-white"
+                  />
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Builder Summary</p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-slate-700 flex justify-between">
+                      <span>Type:</span>
+                      <span className="text-indigo-600 font-bold">{builtScenario.scenarioTypeLabel}</span>
+                    </p>
+                    <p className="text-sm font-medium text-slate-700 flex justify-between">
+                      <span>Base Date:</span>
+                      <span>{builtScenario.base_date}</span>
+                    </p>
+                    <p className="text-sm font-medium text-slate-700 flex justify-between">
+                      <span>Parameters:</span>
+                      <span>{Object.keys(builtScenario.params).length} blocks</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 p-6 bg-slate-50 border-t border-slate-100">
+                <button
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-white transition-all text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImportFromBuilder}
+                  disabled={!importScenarioName.trim()}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 text-sm"
+                >
+                  Import Scenario
                 </button>
               </div>
             </motion.div>

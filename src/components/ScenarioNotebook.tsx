@@ -10,6 +10,15 @@ import { cn } from '../lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+export interface BuiltScenario {
+    name: string;
+    base_date: string;
+    scenarioTypeId: string;
+    scenarioTypeLabel: string;
+    params: Record<string, unknown>;
+    notebookCode: string;   // concatenated source of all code cells
+}
+
 type CellType = 'code' | 'markdown';
 type CellStatus = 'idle' | 'running' | 'success' | 'error';
 
@@ -337,11 +346,17 @@ function buildRuntime(datasets: Dataset[], output: OutputLine[], scenarioRef: Mu
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ScenarioNotebook() {
+interface ScenarioNotebookProps {
+    onScenarioBuilt?: (scenario: BuiltScenario) => void;
+}
+
+export function ScenarioNotebook({ onScenarioBuilt }: ScenarioNotebookProps = {}) {
     const [scenarioTypeId, setScenarioTypeId] = useState<string>(SCENARIO_TYPES[0].id);
     const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
 
     const currentType = SCENARIO_TYPES.find(t => t.id === scenarioTypeId) ?? SCENARIO_TYPES[0];
+
+    const [builtScenario, setBuiltScenario] = useState<BuiltScenario | null>(null);
 
     const [cells, setCells] = useState<Cell[]>(() => [
         { id: uid(), type: 'code', source: currentType.starterCode, output: [], status: 'idle', executionCount: 0 },
@@ -362,6 +377,24 @@ export function ScenarioNotebook() {
     const scenarioRef = useRef<Record<string, unknown>>({});
 
     // ── When scenario type changes, replace first cell with that type's template ─
+
+    // Called after runAll: collect scenario state and notify parent
+    const collectAndExport = (finalCells: Cell[]) => {
+        const code = finalCells
+            .filter((c: Cell) => c.type === 'code')
+            .map((c: Cell) => c.source)
+            .join('\n\n// ─────────────────────────────────────────\n\n');
+        const snap: BuiltScenario = {
+            name: String(scenarioRef.current['name'] ?? currentType.label + ' Scenario'),
+            base_date: String(scenarioRef.current['base_date'] ?? new Date().toISOString().split('T')[0]),
+            scenarioTypeId: scenarioTypeId,
+            scenarioTypeLabel: currentType.label,
+            params: { ...(scenarioRef.current['_params'] as Record<string, unknown> ?? {}) },
+            notebookCode: code,
+        };
+        setBuiltScenario(snap);
+        onScenarioBuilt?.(snap);
+    };
 
     const handleTypeChange = (typeId: string) => {
         const t = SCENARIO_TYPES.find(s => s.id === typeId);
@@ -427,9 +460,23 @@ export function ScenarioNotebook() {
     }, [cells, datasets, execCount]);
 
     const runAll = async () => {
+        setBuiltScenario(null);
+        // run cells sequentially and capture updated cells at end
+        let latestCells = cells;
         for (const cell of cells) {
-            if (cell.type === 'code') await runCell(cell.id);
+            if (cell.type === 'code') {
+                await runCell(cell.id);
+                // capture latest cells after each run
+                latestCells = cells;
+            }
         }
+        // small delay to let state settle, then export
+        setTimeout(() => {
+            setCells(prev => {
+                collectAndExport(prev);
+                return prev;
+            });
+        }, 100);
     };
 
     // ── Data Import: File ──────────────────────────────────────────────────────
@@ -597,6 +644,19 @@ IMPORTANTE: Devuelve SOLO el bloque de código, sin markdown ni texto adicional.
                     </div>
 
                     <div className="h-4 w-px bg-slate-200" />
+
+                    <AnimatePresence>
+                        {builtScenario && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold uppercase tracking-wider"
+                            >
+                                <Check className="w-3 h-3" />
+                                Ready to Import
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <div className="flex items-center gap-1">
                         <button
