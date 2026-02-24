@@ -1,0 +1,5 @@
+{
+  "name": "ALQUID - Scenario Generator",
+  "description": "ALM Scenario Builder for ALQUID. Define macroeconomic and stress scenarios, visualize curves, and generate Excel inputs.",
+  "requestFramePermissions": []
+}
