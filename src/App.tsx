@@ -224,6 +224,13 @@ function App() {
               <Plus className="w-4 h-4" />
               New Scenario
             </button>
+            <button
+              onClick={() => { setActiveView('notebook'); setSelectedScenarioId(null); }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-indigo-600 border border-indigo-200 hover:border-indigo-300 rounded-lg text-sm font-medium transition-all shadow-sm"
+            >
+              <Code2 className="w-4 h-4" />
+              Import from Builder
+            </button>
           </div>
 
           {loading ? (
