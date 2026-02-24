@@ -33,6 +33,13 @@ export function useScenarios() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, description, base_date, risk_types, tags: [] })
     });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Status: ${res.status}, Body: ${errorText}`);
+      throw new Error(`Server error: ${res.status} ${res.statusText}`);
+    }
+
     const data = await res.json();
     // Refresh list
     const listRes = await fetch('/api/scenarios');

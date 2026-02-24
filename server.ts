@@ -103,6 +103,11 @@ async function startServer() {
 
   app.use(express.json());
 
+  // --- Health check ---
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', database: 'connected' });
+  });
+
   // --- API Routes ---
 
   // GET /api/scenarios

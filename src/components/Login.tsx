@@ -45,11 +45,11 @@ export function Login({ onLogin }: LoginProps) {
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
                     {/* Logo & Header */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-4 shadow-lg overflow-hidden">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-4 shadow-lg overflow-hidden p-2">
                             <img
-                                src="/Logo.JPG"
+                                src="/logo.jpg"
                                 alt="ALQUID N Logo"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                             />
                         </div>
                         <h1 className="text-3xl font-bold text-white tracking-tight">ALQUID</h1>

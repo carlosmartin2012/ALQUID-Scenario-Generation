@@ -156,8 +156,8 @@ function App() {
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
         <div className="p-6 border-b border-slate-100">
           <div className="flex items-center gap-2 text-indigo-600">
-            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm">
-              <img src="/Logo.JPG" alt="N" className="w-full h-full object-cover" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm p-0.5 bg-white">
+              <img src="/logo.jpg" alt="N" className="w-full h-full object-contain" />
             </div>
             <span className="font-bold text-lg tracking-tight">ALQUID</span>
           </div>
