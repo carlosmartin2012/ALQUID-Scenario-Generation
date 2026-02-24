@@ -17,10 +17,13 @@ import {
   BookOpen,
   X as XIcon,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Code2,
+  BookMarked
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScenarioBuilder } from './components/ScenarioBuilder';
+import { ScenarioNotebook } from './components/ScenarioNotebook';
 import { useScenarios } from './hooks/useScenarios';
 import { cn } from './lib/utils';
 import { RiskType, Scenario } from './types';
@@ -34,6 +37,7 @@ function App() {
   const [isNewDateModalOpen, setIsNewDateModalOpen] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [manualSection, setManualSection] = useState<number | null>(null);
+  const [activeView, setActiveView] = useState<'dashboard' | 'notebook'>('dashboard');
 
   // Create Scenario State
   const [newScenarioName, setNewScenarioName] = useState('');
@@ -173,10 +177,10 @@ function App() {
         <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
           <div>
             <button
-              onClick={() => setSelectedScenarioId(null)}
+              onClick={() => { setSelectedScenarioId(null); setActiveView('dashboard'); }}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                !selectedScenarioId
+                activeView === 'dashboard' && !selectedScenarioId
                   ? "bg-indigo-50 text-indigo-700"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
@@ -184,6 +188,25 @@ function App() {
               <LayoutDashboard className="w-4 h-4" />
               Dashboard
             </button>
+
+            {/* Scenario Builder section */}
+            <div className="mt-2">
+              <p className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                Scenario Builder
+              </p>
+              <button
+                onClick={() => { setActiveView('notebook'); setSelectedScenarioId(null); }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  activeView === 'notebook'
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                )}
+              >
+                <Code2 className="w-4 h-4" />
+                Notebook
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -284,6 +307,8 @@ function App() {
       <main className="flex-1 overflow-hidden flex flex-col">
         {selectedScenarioId ? (
           <ScenarioBuilder scenarioId={selectedScenarioId} onBack={() => setSelectedScenarioId(null)} />
+        ) : activeView === 'notebook' ? (
+          <ScenarioNotebook />
         ) : (
           <div className="flex-1 p-8 overflow-y-auto">
             <header className="mb-8 flex justify-between items-center">
