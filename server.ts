@@ -51,7 +51,7 @@ try {
     if (!hasRiskTypes) {
       db.prepare("ALTER TABLE scenarios ADD COLUMN risk_types TEXT DEFAULT '[\"IRRBB\"]'").run();
       console.log("Added risk_types column to scenarios table");
-      
+
       // Migrate existing risk_type to risk_types if risk_type exists
       const hasRiskType = tableInfo.some((col: any) => col.name === 'risk_type');
       if (hasRiskType) {
@@ -73,21 +73,21 @@ try {
     const count = seedStmt.get() as { count: number };
 
     if (count.count === 0) {
-       const id = uuidv4();
-       const stmt = db.prepare(`
+      const id = uuidv4();
+      const stmt = db.prepare(`
           INSERT INTO scenarios (id, name, description, tags, base_date, status, risk_types)
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
-        
-        stmt.run(id, 'Inflation Stress', 'Dummy scenario for testing', '[]', '2025-12-31', 'draft', JSON.stringify(['IRRBB']));
-        
-        // Initialize default parameters for all blocks
-        const blocks = ['macro', 'rates', 'inflation', 'behavior', 'csrbb', 'liquidity', 'fx'];
-        const insertParam = db.prepare('INSERT INTO scenario_parameters (scenario_id, block_type, data) VALUES (?, ?, ?)');
-        
-        blocks.forEach(block => {
-          insertParam.run(id, block, '{}');
-        });
+
+      stmt.run(id, 'Inflation Stress', 'Dummy scenario for testing', '[]', '2025-12-31', 'draft', JSON.stringify(['IRRBB']));
+
+      // Initialize default parameters for all blocks
+      const blocks = ['macro', 'rates', 'inflation', 'behavior', 'csrbb', 'liquidity', 'fx'];
+      const insertParam = db.prepare('INSERT INTO scenario_parameters (scenario_id, block_type, data) VALUES (?, ?, ?)');
+
+      blocks.forEach(block => {
+        insertParam.run(id, block, '{}');
+      });
     }
   } catch (err) {
     console.error("Seeding failed:", err);
@@ -99,7 +99,7 @@ try {
 // Database persistence enabled
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = 3001;
 
   app.use(express.json());
 
@@ -146,19 +146,19 @@ async function startServer() {
   app.post('/api/scenarios', (req, res) => {
     const { name, description, tags, base_date, risk_types } = req.body;
     const id = uuidv4();
-    
+
     const stmt = db.prepare(`
       INSERT INTO scenarios (id, name, description, tags, base_date, risk_types)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    
+
     stmt.run(id, name, description, JSON.stringify(tags || []), base_date || new Date().toISOString().split('T')[0], JSON.stringify(risk_types || ['IRRBB']));
-    
+
     // Initialize default parameters for all blocks
     // Initialize all blocks, they will be filtered by UI
     const blocks = ['macro', 'rates', 'inflation', 'behavior', 'csrbb', 'liquidity', 'fx'];
     const insertParam = db.prepare('INSERT INTO scenario_parameters (scenario_id, block_type, data) VALUES (?, ?, ?)');
-    
+
     blocks.forEach(block => {
       insertParam.run(id, block, '{}');
     });
@@ -172,33 +172,33 @@ async function startServer() {
   // POST /api/scenarios/copy-date
   app.post('/api/scenarios/copy-date', (req, res) => {
     const { source_date, target_date } = req.body;
-    
+
     if (!source_date || !target_date) {
       return res.status(400).json({ error: 'Source and target dates are required' });
     }
 
     const scenarios = db.prepare('SELECT * FROM scenarios WHERE base_date = ?').all(source_date) as any[];
-    
+
     const createdIds: string[] = [];
     const insertScenario = db.prepare(`
       INSERT INTO scenarios (id, name, description, tags, base_date, status, risk_types, risk_type)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const insertParam = db.prepare('INSERT INTO scenario_parameters (scenario_id, block_type, data) VALUES (?, ?, ?)');
-    
+
     db.transaction(() => {
       scenarios.forEach(s => {
         const newId = uuidv4();
         createdIds.push(newId);
-        
+
         // Copy scenario
         insertScenario.run(
-          newId, 
-          s.name, 
-          s.description, 
-          s.tags, 
-          target_date, 
-          'draft', 
+          newId,
+          s.name,
+          s.description,
+          s.tags,
+          target_date,
+          'draft',
           s.risk_types || JSON.stringify(['IRRBB']),
           s.risk_type || 'IRRBB' // Keep for backward compatibility if needed
         );
@@ -208,7 +208,7 @@ async function startServer() {
         params.forEach(p => {
           insertParam.run(newId, p.block_type, p.data);
         });
-        
+
         db.prepare('INSERT INTO audit_log (scenario_id, action, details) VALUES (?, ?, ?)').run(newId, 'COPY', `Copied from ${s.id} (${source_date})`);
       });
     })();
@@ -245,7 +245,7 @@ async function startServer() {
         updateParam.run(id, block, JSON.stringify(data));
       });
     }
-    
+
     db.prepare('INSERT INTO audit_log (scenario_id, action, details) VALUES (?, ?, ?)').run(id, 'UPDATE', 'Scenario updated');
 
     res.json({ success: true });
@@ -264,7 +264,7 @@ async function startServer() {
     // Fetch scenario data
     const scenarioStmt = db.prepare('SELECT * FROM scenarios WHERE id = ?');
     const scenario = scenarioStmt.get(id) as any;
-    
+
     if (!scenario) return res.status(404).json({ error: 'Scenario not found' });
 
     const paramsStmt = db.prepare('SELECT block_type, data FROM scenario_parameters WHERE scenario_id = ?');
@@ -273,10 +273,10 @@ async function startServer() {
     paramsRows.forEach(p => params[p.block_type] = JSON.parse(p.data));
 
     // --- Generate Excel Files ---
-    
+
     // 1. market_data_template.xlsx
     const wbMarket = XLSX.utils.book_new();
-    
+
     // Interest Rates Sheet
     const ratesData = [
       ['Term', 'Base Rate', 'Shocked Rate'],
@@ -289,28 +289,28 @@ async function startServer() {
     ];
     const wsRates = XLSX.utils.aoa_to_sheet(ratesData);
     XLSX.utils.book_append_sheet(wbMarket, wsRates, "Interest Rates");
-    
+
     // Inflation Sheet
     const inflationData = [['Type', 'Curve Name', 'Shock']];
-    
+
     if (params.inflation) {
       const { nominal_configuration, real_configuration } = params.inflation;
-      
+
       if (nominal_configuration) {
         inflationData.push(['Nominal', nominal_configuration.name || 'COP Gov.', nominal_configuration.shock || 0]);
       }
-      
+
       if (real_configuration) {
         inflationData.push(['Real', real_configuration.name || 'UVR', real_configuration.shock || 0]);
       }
     }
-    
+
     const wsInflation = XLSX.utils.aoa_to_sheet(inflationData);
     XLSX.utils.book_append_sheet(wbMarket, wsInflation, "Inflation");
 
     // 2. behavior_template.xlsx
     const wbBehavior = XLSX.utils.book_new();
-    
+
     // NMDs Sheet
     const nmdData = [['Model Name', 'Beta', '% Volatile', 'Rate %', 'Depo %']];
     if (params.behavior?.nmd_models) {

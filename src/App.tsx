@@ -20,8 +20,10 @@ import { ScenarioBuilder } from './components/ScenarioBuilder';
 import { useScenarios } from './hooks/useScenarios';
 import { cn } from './lib/utils';
 import { RiskType, Scenario } from './types';
+import { Login } from './components/Login';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { scenarios, loading, createScenario, deleteScenario, copyScenariosFromDate } = useScenarios();
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -60,10 +62,15 @@ function App() {
       // TODO: Implement ALQUID import logic
     }
 
-    const id = await createScenario(newScenarioName, newScenarioDesc, newScenarioDate, newScenarioRiskTypes);
-    setSelectedScenarioId(id);
-    setIsCreateModalOpen(false);
-    resetForm();
+    try {
+      const id = await createScenario(newScenarioName, newScenarioDesc, newScenarioDate, newScenarioRiskTypes);
+      setSelectedScenarioId(id);
+      setIsCreateModalOpen(false);
+      resetForm();
+    } catch (err) {
+      console.error("Failed to create scenario:", err);
+      alert("Failed to create scenario. Please check if the server is running.");
+    }
   };
 
   const handleConnectAlquid = () => {
@@ -76,15 +83,20 @@ function App() {
   };
 
   const handleCopyDate = async () => {
-    if (!newDateValue) return;
-    if (copySourceDate) {
-      await copyScenariosFromDate(copySourceDate, newDateValue);
+    try {
+      if (copySourceDate) {
+        await copyScenariosFromDate(copySourceDate, newDateValue);
+      } else {
+        // If no source date, create a default "Baseline" scenario for the new date
+        // so that the date appears in the UI
+        await createScenario("Baseline", "Initial baseline for " + newDateValue, newDateValue, ['IRRBB']);
+      }
+      setIsNewDateModalOpen(false);
+      setCopySourceDate('');
+    } catch (err) {
+      console.error("Failed to handle date creation:", err);
+      alert("Error processing date. Check connection.");
     }
-    // If no source date, we just close modal. 
-    // In a real app, maybe we'd create a placeholder or just navigate to that date view.
-    // But for now, the requirement is "allow option to copy existing scenarios".
-    setIsNewDateModalOpen(false);
-    setCopySourceDate('');
   };
 
   const resetForm = () => {
@@ -132,13 +144,10 @@ function App() {
   // Get unique dates for copy source dropdown
   const uniqueDates = Array.from(new Set(scenarios.map(s => s.base_date))).sort().reverse();
 
-  if (selectedScenarioId) {
-    return (
-      <ScenarioBuilder
-        scenarioId={selectedScenarioId}
-        onBack={() => setSelectedScenarioId(null)}
-      />
-    );
+
+
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
   }
 
   return (
@@ -147,7 +156,9 @@ function App() {
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
         <div className="p-6 border-b border-slate-100">
           <div className="flex items-center gap-2 text-indigo-600">
-            <Activity className="w-6 h-6" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm">
+              <img src="/Logo.JPG" alt="N" className="w-full h-full object-cover" />
+            </div>
             <span className="font-bold text-lg tracking-tight">ALQUID</span>
           </div>
         </div>
